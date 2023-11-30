@@ -6,31 +6,36 @@ class ViewController: UIViewController {
     
     @IBOutlet var tableView: UITableView!
     
-    var data: Top?
-    var dm: DataManager = DataManager()
+    private var data: Top?
+    private var dm: DataManager = DataManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         tableView.delegate = self
         tableView.dataSource = self
-        
-        
-        dm.loadData(url: "https://bbc.github.io/sport-app-dev-tech-challenge/data.json") { data in
-            self.data = data
-            DispatchQueue.main.async {
-                self.tableView.reloadData()
+        setupView()
+        loadData()
+    }
+    
+    private func loadData() {
+        dm.loadData(url: "https://bbc.github.io/sport-app-dev-tech-challenge/data.json") { result in
+            switch result {
+            case .success(let data):
+                DispatchQueue.main.async {
+                    self.data = data
+                    self.tableView.reloadData()
+                }
+            case .failure(let error):
+                print(error)
             }
         }
-        
-
-
-        
-        
-        
+    }
+    
+    func setupView() {
         let header = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 50))
         let footer = UIView(frame: CGRect(x: 0, y: 0, width: view.frame.size.width, height: 50))
         
-        header.backgroundColor = UIColor(red: 1.0, green: 0.8  , blue: 0.2, alpha: 1.0 ) 
+        header.backgroundColor = UIColor(red: 1.0, green: 0.8  , blue: 0.2, alpha: 1.0 )
         footer.backgroundColor = .black
         
         
@@ -62,10 +67,10 @@ class ViewController: UIViewController {
 //}
 extension ViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-
+        
         if let item = data?.data.items[indexPath.row], let url = URL(string: item.url) {
-//            performSegue(withIdentifier: "webpageSegue", sender: url)
-//            print("Selected URL: \(url)")
+            //            performSegue(withIdentifier: "webpageSegue", sender: url)
+            //            print("Selected URL: \(url)")
             let webpageController = WebpageController(url: url)
             navigationController?.pushViewController(webpageController, animated: true)
         } else {
@@ -89,7 +94,7 @@ extension ViewController: UITableViewDataSource {
             cell.textLabel?.text = item.title
             cell.textLabel?.font = UIFont.boldSystemFont(ofSize: 16.0)
             cell.backgroundColor = .white
-
+            
             //            this checks is data?.data.topic.title is not nil, using optional binding. It wont display if not available.
             if let topicTitle = data?.data.topic.title {
                 let attributedText = NSMutableAttributedString(string: "\(topicTitle)  ·  \(item.lastUpdatedText) ago")
@@ -120,7 +125,7 @@ extension ViewController: UITableViewDataSource {
                             cell.imageView?.image = UIGraphicsGetImageFromCurrentImageContext()
                             UIGraphicsEndImageContext()
                             
-                           
+                            
                             cell.setNeedsLayout() // Refresh cell layout to display the image
                         }
                     }

@@ -7,28 +7,41 @@
 
 import UIKit
 
+enum DataManagerError: Error {
+    case urlFailed
+    case dataFailed
+    case UrlSessionError
+    case decodingFailed
+}
+
 class DataManager {
     
-
-    func loadData(url: String, callback: ((_: Top) -> Void)? = nil) {
+    func loadData(url: String, completion: @escaping (Result<Top, DataManagerError>) -> Void) {
         
-        let url = URL(string: "https://bbc.github.io/sport-app-dev-tech-challenge/data.json")!
+        guard let url = URL(string: url) else {
+            completion(.failure(.urlFailed))
+            return
+        }
         
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            if let error = error {
-                print("Error fetching data: \(error.localizedDescription)")
+        URLSession.shared.dataTask(with: URLRequest(url: url)) { data, response, error in
+            
+            guard error == nil else {
+                completion(.failure(.UrlSessionError))
                 return
             }
             
-            if let data = data {
-                do {
-                    let fetchedData = try JSONDecoder().decode(Top.self, from: data)
-                    callback?(fetchedData)
-                    
-                } catch {
-                    print("Error decoding JSON: \(error.localizedDescription)")
-                }
+            guard let data = data else {
+                completion(.failure(.dataFailed))
+                return
             }
+            
+            guard let decodedData = try? JSONDecoder().decode(Top.self, from: data) else {
+                completion(.failure(.decodingFailed))
+                return
+            }
+            
+            completion(.success(decodedData))
+            
         }.resume()
     }
 }
